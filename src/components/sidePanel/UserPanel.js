@@ -55,7 +55,7 @@ export class UserPanel extends Component {
               <Header.Content>DevChat</Header.Content>
             </Header>
           </Grid.Row>
-          <Header style={{ padding: "0.25rem" }} as="h4" inverted>
+          <Header style={{ padding: "1rem" }} as="h4" inverted>
             <Dropdown
               trigger={
                 <span>
