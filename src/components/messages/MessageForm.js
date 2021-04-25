@@ -5,7 +5,7 @@ import firebase from "../../firebase";
 export class MessageForm extends Component {
   state = {
     message: "",
-    loading: "",
+    loading: false,
     channel: this.props.currentChannel,
     user: this.props.currentUser,
     errors: [],
