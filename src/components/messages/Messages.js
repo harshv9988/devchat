@@ -15,7 +15,6 @@ export class Messages extends Component {
   };
 
   componentDidMount() {
-    console.log("out");
     const { channel, user } = this.state;
 
     if (channel && user) {
@@ -28,7 +27,6 @@ export class Messages extends Component {
   };
 
   addMessageListener = (channelID) => {
-    console.log("in");
     let loadedMessages = [];
     this.state.messagesRef.child(channelID).on("child_added", (snap) => {
       loadedMessages.push(snap.val());
@@ -45,8 +43,8 @@ export class Messages extends Component {
       <>
         <MessagesHeader />
 
-        <Segment>
-          <Comment.Group className="messages">
+        <Segment style={{ height: 500 }}>
+          <Comment.Group className="messages" style={{ height: "100%" }}>
             {messages.length > 0 &&
               messages.map((message) => (
                 <Message
