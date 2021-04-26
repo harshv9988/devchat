@@ -12,6 +12,10 @@ export class Messages extends Component {
     user: this.props.currentUser,
     messages: [],
     messagesLoading: true,
+    numUniqueUsers: "",
+    searchTerm: "",
+    searchLoading: false,
+    searchResults: [],
   };
 
   componentDidMount() {
@@ -21,6 +25,37 @@ export class Messages extends Component {
       this.addListeners(channel.id);
     }
   }
+
+  handleSearchChange = (event) => {
+    this.setState(
+      {
+        searchTerm: event.target.value,
+        searchLoading: true,
+      },
+      () => this.handleSearchMessages()
+    );
+  };
+
+  handleSearchMessages = () => {
+    const channelMessages = [...this.state.messages];
+    const regex = new RegExp(this.state.searchTerm, "gi");
+
+    const searchResults = channelMessages.reduce((acc, message) => {
+      if (
+        (message.content && message.content.match(regex)) ||
+        message.user.name.match(regex)
+      ) {
+        acc.push(message);
+      }
+      return acc;
+    }, []);
+
+    this.setState({
+      searchResults,
+    });
+
+    setTimeout(() => this.setState({ searchLoading: false }), 1000);
+  };
 
   addListeners = (channelID) => {
     this.addMessageListener(channelID);
@@ -34,25 +69,68 @@ export class Messages extends Component {
         messages: loadedMessages,
         messagesLoading: false,
       });
+      this.countUniqueUsers(loadedMessages);
     });
   };
 
+  countUniqueUsers = (messages) => {
+    const uniqueUsers = messages.reduce((acc, message) => {
+      if (!acc.includes(message.user.name)) {
+        acc.push(message.user.name);
+      }
+      return acc;
+    }, []);
+
+    if (uniqueUsers.length > 1) {
+      const numUniqueUsers = `${uniqueUsers.length} users`;
+      this.setState({ numUniqueUsers });
+    } else {
+      const numUniqueUsers = `${uniqueUsers.length} user`;
+      this.setState({ numUniqueUsers });
+    }
+  };
+
+  displayChannelName = (channel) => (channel ? `${channel.name}` : "");
+
   render() {
-    const { messagesRef, channel, user, messages } = this.state;
+    const {
+      messagesRef,
+      channel,
+      user,
+      messages,
+      numUniqueUsers,
+      searchResults,
+      searchTerm,
+      searchLoading,
+    } = this.state;
     return (
       <>
-        <MessagesHeader />
+        <MessagesHeader
+          channelName={this.displayChannelName(channel)}
+          numUniqueUsers={numUniqueUsers}
+          handleSearchChange={this.handleSearchChange}
+          searchLoading={searchLoading}
+        />
 
         <Segment style={{ height: 500 }}>
           <Comment.Group className="messages" style={{ height: "100%" }}>
-            {messages.length > 0 &&
-              messages.map((message) => (
-                <Message
-                  key={message.timestamp}
-                  message={message}
-                  user={this.state.user}
-                />
-              ))}
+            {searchTerm
+              ? searchResults.length > 0 &&
+                searchResults.map((message) => (
+                  <Message
+                    key={message.timestamp}
+                    message={message}
+                    user={this.state.user}
+                  />
+                ))
+              : messages.length > 0 &&
+                messages.map((message) => (
+                  <Message
+                    key={message.timestamp}
+                    message={message}
+                    user={this.state.user}
+                  />
+                ))}
           </Comment.Group>
         </Segment>
 
