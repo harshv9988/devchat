@@ -18,6 +18,8 @@ export class Messages extends Component {
     searchTerm: "",
     searchLoading: false,
     searchResults: [],
+    isChannelStarred: false,
+    usersRef: firebase.database().ref("users"),
   };
 
   componentDidMount() {
@@ -25,6 +27,7 @@ export class Messages extends Component {
 
     if (channel && user) {
       this.addListeners(channel.id);
+      this.addUsersStarsListener(channel.id, user.uid);
     }
   }
 
@@ -57,6 +60,20 @@ export class Messages extends Component {
     });
 
     setTimeout(() => this.setState({ searchLoading: false }), 1000);
+  };
+
+  addUsersStarsListener = (channelId, userId) => {
+    this.state.usersRef
+      .child(userId)
+      .child("starred")
+      .once("value")
+      .then((data) => {
+        if (data.val() !== null) {
+          const channelIds = Object.keys(data.val());
+          const prevStarred = channelIds.includes(channelId);
+          this.setState({ isChannelStarred: prevStarred });
+        }
+      });
   };
 
   addListeners = (channelID) => {
@@ -104,6 +121,39 @@ export class Messages extends Component {
       : "";
   };
 
+  handleStar = () => {
+    this.setState(
+      (prevState) => ({
+        isChannelStarred: !prevState.isChannelStarred,
+      }),
+      () => this.starChannel()
+    );
+  };
+
+  starChannel = () => {
+    if (this.state.isChannelStarred) {
+      this.state.usersRef.child(`${this.state.user.uid}/starred`).update({
+        [this.state.channel.id]: {
+          name: this.state.channel.name,
+          details: this.state.channel.details,
+          createdBy: {
+            name: this.state.channel.createdBy.name,
+            avatar: this.state.channel.createdBy.avatar,
+          },
+        },
+      });
+    } else {
+      this.state.usersRef
+        .child(`${this.state.user.uid}/starred`)
+        .child(this.state.channel.id)
+        .remove((err) => {
+          if (err != null) {
+            console.log(err);
+          }
+        });
+    }
+  };
+
   render() {
     const {
       messagesRef,
@@ -115,6 +165,7 @@ export class Messages extends Component {
       searchTerm,
       searchLoading,
       privateChannel,
+      isChannelStarred,
     } = this.state;
     return (
       <>
@@ -124,6 +175,8 @@ export class Messages extends Component {
           handleSearchChange={this.handleSearchChange}
           searchLoading={searchLoading}
           isPrivateChannel={privateChannel}
+          handleStar={this.handleStar}
+          isChannelStarred={isChannelStarred}
         />
 
         <Segment style={{ height: 500 }}>
