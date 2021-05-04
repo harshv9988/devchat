@@ -108,7 +108,7 @@ export class DirectMessages extends Component {
         {users.map((user) => (
           <Menu.Item
             active={user.uid === activeChannel}
-            key={user.id}
+            key={user.uid}
             onClick={() => this.changeChannel(user)}
             style={{ opacity: 0.7, fontStyle: "italic" }}
           >
