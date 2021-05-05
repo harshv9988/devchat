@@ -25,6 +25,7 @@ export class Channels extends Component {
     channel: null,
     messagesRef: firebase.database().ref("messages"),
     notifications: [],
+    typingRef: firebase.database().ref("typing"),
   };
 
   componentDidMount() {
@@ -47,6 +48,8 @@ export class Channels extends Component {
       this.addNotificationListener(snap.key);
     });
   };
+
+  // notification logic starts------------------------------------------------------------------------------------
 
   addNotificationListener = (channelId) => {
     this.state.messagesRef.child(channelId).on("value", (snap) => {
@@ -104,7 +107,22 @@ export class Channels extends Component {
     }
   };
 
+  getNotificationCount = (channel) => {
+    let count = 0;
+
+    this.state.notifications.forEach((notification) => {
+      if (notification.id === channel.id) {
+        count = notification.count;
+      }
+    });
+
+    if (count > 0) return count;
+  };
+
+  // creating channel showing active effect logic----------------------------------------------------------------
+
   setFirstChannel = () => {
+    //for showing active effect on opening app on fist channel
     const firstChannel = this.state.channels[0];
     if (this.state.firstLoad && this.state.channels.length > 0) {
       this.props.setCurrentChannel(firstChannel);
@@ -115,20 +133,12 @@ export class Channels extends Component {
     this.setState({ firstLoad: false });
   };
 
-  closeModal = () => {
-    this.setState({ modal: false });
-  };
-
-  openModal = () => {
-    this.setState({ modal: true });
-  };
-
-  handleChange = (event) => {
-    this.setState({ [event.target.name]: event.target.value });
-  };
-
   changeChannel = (channel) => {
     this.setActiveChannel(channel);
+    this.state.typingRef
+      .child(this.state.channel.id)
+      .child(this.state.user.uid)
+      .remove();
     this.props.setCurrentChannel(channel);
     this.props.setPrivateChannel(false);
     this.setState({ channel }, () => {
@@ -177,20 +187,22 @@ export class Channels extends Component {
       });
   };
 
+  // simple utilities-------------------------------------------------------------------------------------------------------
+
+  closeModal = () => {
+    this.setState({ modal: false });
+  };
+
+  openModal = () => {
+    this.setState({ modal: true });
+  };
+
+  handleChange = (event) => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
+
   isFormvalid = ({ channelName, channelDetails }) =>
     channelDetails && channelName;
-
-  getNotificationCount = (channel) => {
-    let count = 0;
-
-    this.state.notifications.forEach((notification) => {
-      if (notification.id === channel.id) {
-        count = notification.count;
-      }
-    });
-
-    if (count > 0) return count;
-  };
 
   render() {
     const { channels, modal, channelName, channelDetails } = this.state;

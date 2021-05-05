@@ -6,6 +6,8 @@ import firebase from "../../firebase";
 import Message from "./Message";
 import { connect } from "react-redux";
 import { setUserPosts } from "../../actions/index";
+import Tyoing from "./Typing";
+import Typing from "./Typing";
 
 export class Messages extends Component {
   state = {
@@ -22,6 +24,9 @@ export class Messages extends Component {
     searchResults: [],
     isChannelStarred: false,
     usersRef: firebase.database().ref("users"),
+    typingRef: firebase.database().ref("typing"),
+    typingUsers: [],
+    connectedRef: firebase.database().ref(".info/connected"),
   };
 
   componentDidMount() {
@@ -32,6 +37,8 @@ export class Messages extends Component {
       this.addUsersStarsListener(channel.id, user.uid);
     }
   }
+
+  // search logic----------------------------------------------------------------
 
   handleSearchChange = (event) => {
     this.setState(
@@ -64,23 +71,69 @@ export class Messages extends Component {
     setTimeout(() => this.setState({ searchLoading: false }), 1000);
   };
 
-  addUsersStarsListener = (channelId, userId) => {
-    this.state.usersRef
-      .child(userId)
-      .child("starred")
-      .once("value")
-      .then((data) => {
-        if (data.val() !== null) {
-          const channelIds = Object.keys(data.val());
-          const prevStarred = channelIds.includes(channelId);
-          this.setState({ isChannelStarred: prevStarred });
-        }
-      });
-  };
+  // typing effect logic --------------------------------------------------------------------------------
 
   addListeners = (channelID) => {
     this.addMessageListener(channelID);
+    this.addTypingListeners(channelID);
   };
+
+  addTypingListeners = (channelId) => {
+    let typingUsers = [];
+    this.state.typingRef.child(channelId).on("child_added", (snap) => {
+      console.log("first");
+      if (snap.key !== this.state.user.uid) {
+        console.log("sec");
+        typingUsers = typingUsers.concat({
+          id: snap.key,
+          name: snap.val(),
+        });
+        this.setState({ typingUsers }, () => {
+          console.log("typing", typingUsers);
+        });
+      }
+    });
+
+    this.state.typingRef.child(channelId).on("child_removed", (snap) => {
+      const index = typingUsers.findIndex((user) => user.id === snap.key);
+      if (index !== -1) {
+        typingUsers = typingUsers.filter((user) => user.id !== snap.key);
+        this.setState({ typingUsers });
+      }
+    });
+
+    this.state.connectedRef.on("value", (snap) => {
+      if (snap.val() === true) {
+        this.state.typingRef
+          .child(channelId)
+          .child(this.state.user.uid)
+          .onDisconnect()
+          .remove((err) => {
+            if (err !== null) {
+              console.error(err);
+            }
+          });
+      }
+    });
+  };
+
+  displayTypingUsers = (users) =>
+    users.length > 0 &&
+    users.map((user) => (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "enter",
+          marginBottom: "0.2em",
+        }}
+        key={user.uid}
+      >
+        <span className="user__typing">{user.name} is typing</span>
+        <Typing />
+      </div>
+    ));
+
+  // messages logic------------------------------------------------------------------------------------
 
   addMessageListener = (channelID) => {
     let loadedMessages = [];
@@ -91,15 +144,12 @@ export class Messages extends Component {
         messages: loadedMessages,
         messagesLoading: false,
       });
-      this.countUniqueUsers(loadedMessages);
+      this.countUniqueUsers(loadedMessages); //for message header
       this.countUserPosts(loadedMessages);
     });
   };
 
-  getMessagesRef = () => {
-    const { messagesRef, privateMessagesRef, privateChannel } = this.state;
-    return privateChannel ? privateMessagesRef : messagesRef;
-  };
+  // message header info-------------------------------------------------------------------------------
 
   countUniqueUsers = (messages) => {
     const uniqueUsers = messages.reduce((acc, message) => {
@@ -140,6 +190,22 @@ export class Messages extends Component {
       : "";
   };
 
+  // starred channel logic------------------------------------------------------------------------------
+
+  addUsersStarsListener = (channelId, userId) => {
+    this.state.usersRef
+      .child(userId)
+      .child("starred")
+      .once("value")
+      .then((data) => {
+        if (data.val() !== null) {
+          const channelIds = Object.keys(data.val());
+          const prevStarred = channelIds.includes(channelId);
+          this.setState({ isChannelStarred: prevStarred });
+        }
+      });
+  };
+
   handleStar = () => {
     this.setState(
       (prevState) => ({
@@ -173,6 +239,13 @@ export class Messages extends Component {
     }
   };
 
+  // simple utilities----------------------------------------------------------------
+
+  getMessagesRef = () => {
+    const { messagesRef, privateMessagesRef, privateChannel } = this.state;
+    return privateChannel ? privateMessagesRef : messagesRef;
+  };
+
   render() {
     const {
       messagesRef,
@@ -185,6 +258,7 @@ export class Messages extends Component {
       searchLoading,
       privateChannel,
       isChannelStarred,
+      typingUsers,
     } = this.state;
     return (
       <>
@@ -217,6 +291,7 @@ export class Messages extends Component {
                     user={this.state.user}
                   />
                 ))}
+            {this.displayTypingUsers(typingUsers)}
           </Comment.Group>
         </Segment>
 
