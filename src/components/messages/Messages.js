@@ -6,8 +6,8 @@ import firebase from "../../firebase";
 import Message from "./Message";
 import { connect } from "react-redux";
 import { setUserPosts } from "../../actions/index";
-import Tyoing from "./Typing";
 import Typing from "./Typing";
+import Skeleton from "./Skeleton";
 
 export class Messages extends Component {
   state = {
@@ -255,6 +255,15 @@ export class Messages extends Component {
     return privateChannel ? privateMessagesRef : messagesRef;
   };
 
+  displayMessagesSkeleton = (loading) =>
+    loading ? (
+      <>
+        {[...Array(10)].map((_, i) => (
+          <Skeleton key={i} />
+        ))}
+      </>
+    ) : null;
+
   render() {
     const {
       messagesRef,
@@ -268,6 +277,7 @@ export class Messages extends Component {
       privateChannel,
       isChannelStarred,
       typingUsers,
+      messagesLoading,
     } = this.state;
     return (
       <>
@@ -283,6 +293,7 @@ export class Messages extends Component {
 
         <Segment style={{ height: 500 }}>
           <Comment.Group className="messages" style={{ height: "100%" }}>
+            {this.displayMessagesSkeleton(messagesLoading)}
             {searchTerm
               ? searchResults.length > 0 &&
                 searchResults.map((message) => (
@@ -301,6 +312,7 @@ export class Messages extends Component {
                   />
                 ))}
             {this.displayTypingUsers(typingUsers)}
+
             <div ref={(node) => (this.messagesEnd = node)}></div>
           </Comment.Group>
         </Segment>
