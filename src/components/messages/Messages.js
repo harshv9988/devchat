@@ -38,6 +38,15 @@ export class Messages extends Component {
     }
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (this.messagesEnd) {
+      this.scrollToBottom();
+    }
+  }
+  scrollToBottom = () => {
+    this.messagesEnd.scrollIntoView({ behavior: "smooth" });
+  };
+
   // search logic----------------------------------------------------------------
 
   handleSearchChange = (event) => {
@@ -292,6 +301,7 @@ export class Messages extends Component {
                   />
                 ))}
             {this.displayTypingUsers(typingUsers)}
+            <div ref={(node) => (this.messagesEnd = node)}></div>
           </Comment.Group>
         </Segment>
 
