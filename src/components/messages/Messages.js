@@ -188,6 +188,10 @@ export class Messages extends Component {
       this.countUserPosts(loadedMessages);
     });
 
+    setTimeout(() => {
+      this.setState({ messagesLoading: false });
+    }, 3000);
+
     this.addToListeners(channelID, tempRef, "child_added");
   };
 
@@ -291,7 +295,7 @@ export class Messages extends Component {
   displayMessagesSkeleton = (loading) =>
     loading ? (
       <>
-        {[...Array(10)].map((_, i) => (
+        {[...Array(9)].map((_, i) => (
           <Skeleton key={i} />
         ))}
       </>
