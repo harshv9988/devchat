@@ -83,6 +83,7 @@ export class Login extends Component {
               <Form.Input
                 fluid
                 name="password"
+                type="password"
                 icon="lock"
                 iconPosition="left"
                 placeholder="Password"

@@ -163,6 +163,7 @@ export class Register extends Component {
               <Form.Input
                 fluid
                 name="password"
+                type="password"
                 icon="lock"
                 iconPosition="left"
                 placeholder="Password"
@@ -173,6 +174,7 @@ export class Register extends Component {
               <Form.Input
                 fluid
                 name="passwordConfirmation"
+                type="password"
                 icon="repeat"
                 iconPosition="left"
                 placeholder="Password Confirmation"
